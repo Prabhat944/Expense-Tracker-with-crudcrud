@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>expense tracker</title>
+</head>
+<body>
+   <form id="container">
+       <label>Choose ExpenseAmount: </label>
+       <input type="number" id="number" name="amount" required>
+       <label>Choose Description</label>
+       <input type="text" id="detail" name="description" required>
+       <label>Choose a Category</label>
+       <select id="category" value>
+           <option selected disabled hidden></option>
+           <option >fuel</option>
+           <option >food</option>
+           <option >electricity</option>
+           <option >movie</option>
+       </select>
+       <button>Submit</button>
+   </form> 
+   <ul id="item_list"></ul>
+   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+   <script>
+        var user_id=undefined;
+
+
+        window.addEventListener('DOMContentLoaded',()=>{
+            axios.get('https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data')
+            .then(res=>{
+                for(let i=0;i<res.data.length;i++){
+                    showResponse(res.data[i]);
+                }
+            })
+            .catch(err=>console.error(err));
+        })
+
+
+
+        document.getElementById('container')
+        .addEventListener('submit',addUser);
+
+        function addUser(event){
+            event.preventDefault();
+            let amount =event.target.amount.value;
+            let description=event.target.description.value;
+            let category=event.target.category.value;
+            const obj={
+                amount,
+                description,
+                category
+            }
+            if(user_id===undefined){
+            axios.post('https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data',obj)
+            .then(res=>{
+                showResponse(res.data)
+                console.log('added');
+            })
+            .catch(err=>console.error(err));
+           }else{
+               axios.put(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${user_id}`,obj)
+               .then(res=>{
+                    
+                    let userList=document.getElementById('item_list');
+                    let list=document.createElement('li');
+                    list.id=user_id;
+                    list.innerHTML=`${amount} - ${category} - ${description} `;
+                    let deleteBtn=document.createElement('button');
+                    deleteBtn.appendChild(document.createTextNode('Delete expense'));
+                    deleteBtn.className='deleted';
+                    list.append(deleteBtn);
+
+                    let editBtn=document.createElement('button');
+                    editBtn.appendChild(document.createTextNode('Edit Expense'));
+                    editBtn.className='edited';
+                    list.appendChild(editBtn);
+                    userList.appendChild(list);
+                    
+                    let user_List =document.getElementById('item_list');
+                    let lists=document.getElementById(user_id);
+                    if(lists){
+                        user_List.removeChild(lists);
+                    }
+                    user_id=undefined;
+                    
+               })
+               .catch(err=>console.log(err));
+           }
+            
+            document.getElementById('number').value='';
+            document.getElementById('detail').value='';
+            document.getElementById('category').value='';
+
+        }
+
+        function showResponse(data){
+            let userList=document.getElementById('item_list');
+            let list=document.createElement('li');
+            list.id=data._id;
+            list.innerHTML=`${data.amount} - ${data.category} - ${data.description} `;
+            let deleteBtn=document.createElement('button');
+            deleteBtn.appendChild(document.createTextNode('Delete Expense'));
+            deleteBtn.className='deleted';
+            list.append(deleteBtn);
+
+            let editBtn=document.createElement('button');
+            editBtn.appendChild(document.createTextNode('Edit Expense'));
+            editBtn.className='edited';
+            list.appendChild(editBtn);
+
+            userList.appendChild(list);
+        }
+        
+        document.getElementById('item_list')
+        .addEventListener('click',deleteORedit)
+
+        function deleteORedit(event){
+            if(event.target.classList.contains('deleted')){
+                axios.delete(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${event.target.parentElement.id}`)
+                .then(res=>{
+                    console.log('deleted')
+                    removeList(event.target.parentElement.id);
+                })
+                .catch(err=>console.error(err));
+            }
+            if(event.target.classList.contains('edited')){
+                axios.get(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${event.target.parentElement.id}`)
+                .then(res=>{
+                document.getElementById('number').value=res.data.amount;
+                document.getElementById('detail').value=res.data.description;
+                document.getElementById('category').value=res.data.category;
+                user_id=res.data._id;
+                console.log('edited');
+                })
+                .catch(err=>console.error(err));
+                
+            }
+
+            function removeList(event){
+                    let userList=document.getElementById('item_list');
+                    let childDeleted=document.getElementById(event);
+                    if(childDeleted){
+                        userList.removeChild(childDeleted);
+                    }
+            }
+        }
+   </script>
+</body>
+</html>
