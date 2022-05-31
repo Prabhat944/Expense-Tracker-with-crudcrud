@@ -26,24 +26,27 @@
    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
    <script>
         var user_id=undefined;
-
-
-        window.addEventListener('DOMContentLoaded',()=>{
-            axios.get('https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data')
-            .then(res=>{
-                for(let i=0;i<res.data.length;i++){
+      //get data from server using network call
+       try {
+        window.addEventListener('DOMContentLoaded',async()=>{
+               const res=await axios.get('https://crudcrud.com/api/56252ca32d164d81b8b049acbb701676/expense-data'); 
+               console.log(res)
+               for(let i=0;i<res.data.length;i++){
                     showResponse(res.data[i]);
                 }
             })
-            .catch(err=>console.error(err));
-        })
+        }
 
-
-
-        document.getElementById('container')
+        catch (error) {
+           console.log(error)
+       }
+       
+     //save data at server using network call
+   try {
+    document.getElementById('container')
         .addEventListener('submit',addUser);
 
-        function addUser(event){
+       async function addUser(event){
             event.preventDefault();
             let amount =event.target.amount.value;
             let description=event.target.description.value;
@@ -53,17 +56,16 @@
                 description,
                 category
             }
-            if(user_id===undefined){
-            axios.post('https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data',obj)
-            .then(res=>{
-                showResponse(res.data)
-                console.log('added');
-            })
-            .catch(err=>console.error(err));
-           }else{
-               axios.put(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${user_id}`,obj)
-               .then(res=>{
-                    
+           console.log(obj)
+            
+                console.log('we are here')
+                if(user_id===undefined){
+
+                 const res=await axios.post('https://crudcrud.com/api/56252ca32d164d81b8b049acbb701676/expense-data',obj);
+                  showResponse(res.data)
+                    console.log('added');
+                }else{
+                 await axios.put(`https://crudcrud.com/api/56252ca32d164d81b8b049acbb701676/expense-data/${user_id}`,obj);
                     let userList=document.getElementById('item_list');
                     let list=document.createElement('li');
                     list.id=user_id;
@@ -84,17 +86,45 @@
                     if(lists){
                         user_List.removeChild(lists);
                     }
-                    user_id=undefined;
-                    
-               })
-               .catch(err=>console.log(err));
+                    user_id=undefined;    
            }
+            }
             
             document.getElementById('number').value='';
             document.getElementById('detail').value='';
             document.getElementById('category').value='';
 
         }
+       
+        catch (error) {
+           console.log(error)
+         }
+        
+
+        //Edit and delete user data
+        try {
+            document.getElementById('item_list')
+        .addEventListener('click',deleteORedit)
+
+        async function deleteORedit(event){
+            if(event.target.classList.contains('deleted')){
+               await axios.delete(`https://crudcrud.com/api/56252ca32d164d81b8b049acbb701676/expense-data/${event.target.parentElement.id}`)
+                    console.log('deleted')
+                    removeList(event.target.parentElement.id);
+            }
+            if(event.target.classList.contains('edited')){
+                const res=await axios.get(`https://crudcrud.com/api/56252ca32d164d81b8b049acbb701676/expense-data/${event.target.parentElement.id}`)
+                document.getElementById('number').value=res.data.amount;
+                document.getElementById('detail').value=res.data.description;
+                document.getElementById('category').value=res.data.category;
+                user_id=res.data._id;
+                console.log('edited');                
+            }
+        }
+     } catch (error) {
+            console.log(error)
+        }
+
 
         function showResponse(data){
             let userList=document.getElementById('item_list');
@@ -114,31 +144,6 @@
             userList.appendChild(list);
         }
         
-        document.getElementById('item_list')
-        .addEventListener('click',deleteORedit)
-
-        function deleteORedit(event){
-            if(event.target.classList.contains('deleted')){
-                axios.delete(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${event.target.parentElement.id}`)
-                .then(res=>{
-                    console.log('deleted')
-                    removeList(event.target.parentElement.id);
-                })
-                .catch(err=>console.error(err));
-            }
-            if(event.target.classList.contains('edited')){
-                axios.get(`https://crudcrud.com/api/17d3980001884a7cb88df48a9ca449e1/expense-data/${event.target.parentElement.id}`)
-                .then(res=>{
-                document.getElementById('number').value=res.data.amount;
-                document.getElementById('detail').value=res.data.description;
-                document.getElementById('category').value=res.data.category;
-                user_id=res.data._id;
-                console.log('edited');
-                })
-                .catch(err=>console.error(err));
-                
-            }
-
             function removeList(event){
                     let userList=document.getElementById('item_list');
                     let childDeleted=document.getElementById(event);
@@ -146,7 +151,7 @@
                         userList.removeChild(childDeleted);
                     }
             }
-        }
+        
    </script>
 </body>
 </html>
